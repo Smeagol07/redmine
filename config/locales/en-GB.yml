@@ -584,7 +584,6 @@ en-GB:
   label_used_by: Used by
   label_details: Details
   label_add_note: Add a note
-  label_per_page: Per page
   label_calendar: Calendar
   label_months_from: months from
   label_gantt: Gantt
@@ -1141,3 +1140,6 @@ en-GB:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

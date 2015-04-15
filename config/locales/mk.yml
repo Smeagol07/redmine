@@ -562,7 +562,6 @@ mk:
   label_used_by: Користено од
   label_details: Детали
   label_add_note: Додади белешка
-  label_per_page: По страна
   label_calendar: Календар
   label_months_from: месеци од
   label_gantt: Gantt
@@ -1139,3 +1138,6 @@ mk:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

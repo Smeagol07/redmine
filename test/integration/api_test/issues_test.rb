@@ -183,6 +183,15 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     end
   end
 
+  test "GET /issues/:id.xml with journals should format timestamps in ISO 8601" do
+    get '/issues/1.xml?include=journals'
+
+    iso_date = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+    assert_select 'issue>created_on', :text => iso_date
+    assert_select 'issue>updated_on', :text => iso_date
+    assert_select 'issue journal>created_on', :text => iso_date
+  end
+
   test "GET /issues/:id.xml with custom fields" do
     get '/issues/3.xml'
 
@@ -397,6 +406,35 @@ JSON
     assert_equal 'API test', issue.subject
   end
 
+  test "POST /issues.json without tracker_id should accept custom fields" do
+    field = IssueCustomField.generate!(
+      :field_format => 'list',
+      :multiple => true,
+      :possible_values => ["V1", "V2", "V3"],
+      :default_value => "V2",
+      :is_for_all => true,
+      :trackers => Tracker.all.to_a
+    )
+
+payload = <<-JSON
+{
+  "issue": {
+    "project_id": "1",
+    "subject": "Multivalued custom field",
+    "custom_field_values":{"#{field.id}":["V1","V3"]}
+  }
+}
+JSON
+
+    assert_difference('Issue.count') do
+      post '/issues.json', payload, {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
+    end
+
+    assert_response :created
+    issue = Issue.order('id DESC').first
+    assert_equal ["V1", "V3"], issue.custom_field_value(field).sort
+  end
+
   test "POST /issues.json with failure should return errors" do
     assert_no_difference('Issue.count') do
       post '/issues.json', {:issue => {:project_id => 1}}, credentials('jsmith')
@@ -404,6 +442,11 @@ JSON
 
     json = ActiveSupport::JSON.decode(response.body)
     assert json['errors'].include?("Subject cannot be blank")
+  end
+
+  test "POST /issues.json with invalid project_id should respond with 422" do
+    post '/issues.json', {:issue => {:project_id => 999, :subject => "API"}}, credentials('jsmith')
+    assert_response 422
   end
 
   test "PUT /issues/:id.xml" do
@@ -456,6 +499,17 @@ JSON
     issue = Issue.find(3)
     assert_equal 2, issue.project_id
     assert_equal 'Project changed', issue.subject
+  end
+
+  test "PUT /issues/:id.xml with notes only" do
+    assert_difference('Journal.count') do
+      put '/issues/6.xml',
+        {:issue => {:notes => 'Notes only'}},
+        credentials('jsmith')
+    end
+
+    journal = Journal.last
+    assert_equal "Notes only", journal.notes
   end
 
   test "PUT /issues/:id.xml with failed update" do

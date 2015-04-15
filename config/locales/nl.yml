@@ -493,7 +493,6 @@ nl:
   label_overall_activity: Activiteit
   label_overview: Overzicht
   label_password_lost: Wachtwoord verloren
-  label_per_page: Per pagina
   label_permissions: Permissies
   label_permissions_report: Permissierapport
   label_personalize_page: Personaliseer deze pagina
@@ -1118,3 +1117,6 @@ nl:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

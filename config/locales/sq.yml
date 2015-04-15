@@ -607,7 +607,6 @@ sq:
   label_used_by: Perdorur nga
   label_details: Detaje
   label_add_note: Shto nje Shenim
-  label_per_page: Per Faqe
   label_calendar: Kalendar
   label_months_from: muaj nga
   label_gantt: Gantt
@@ -1135,3 +1134,6 @@ sq:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

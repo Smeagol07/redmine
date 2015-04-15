@@ -24,7 +24,16 @@ class Mailer < ActionMailer::Base
   include Redmine::I18n
 
   def self.default_url_options
-    { :host => Setting.host_name, :protocol => Setting.protocol }
+    options = {:protocol => Setting.protocol}
+    if Setting.host_name.to_s =~ /\A(https?\:\/\/)?(.+?)(\:(\d+))?(\/.+)?\z/i
+      host, port, prefix = $2, $4, $5
+      options.merge!({
+        :host => host, :port => port, :script_name => prefix
+      })
+    else
+      options[:host] = Setting.host_name
+    end
+    options
   end
 
   # Builds a mail for notifying to_users and cc_users about a new issue
@@ -319,10 +328,15 @@ class Mailer < ActionMailer::Base
   # * :tracker  => id of tracker for filtering issues (defaults to all trackers)
   # * :project  => id or identifier of project to process (defaults to all projects)
   # * :users    => array of user/group ids who should be reminded
+  # * :version  => name of target version for filtering issues (defaults to none)
   def self.reminders(options={})
     days = options[:days] || 7
     project = options[:project] ? Project.find(options[:project]) : nil
     tracker = options[:tracker] ? Tracker.find(options[:tracker]) : nil
+    target_version_id = options[:version] ? Version.named(options[:version]).pluck(:id) : nil
+    if options[:version] && target_version_id.blank?
+      raise ActiveRecord::RecordNotFound.new("Couldn't find Version with named #{options[:version]}")
+    end
     user_ids = options[:users]
 
     scope = Issue.open.where("#{Issue.table_name}.assigned_to_id IS NOT NULL" +
@@ -331,6 +345,7 @@ class Mailer < ActionMailer::Base
     )
     scope = scope.where(:assigned_to_id => user_ids) if user_ids.present?
     scope = scope.where(:project_id => project.id) if project
+    scope = scope.where(:fixed_version_id => target_version_id) if target_version_id.present?
     scope = scope.where(:tracker_id => tracker.id) if tracker
     issues_by_assignee = scope.includes(:status, :assigned_to, :project, :tracker).
                               group_by(&:assigned_to)
@@ -374,7 +389,7 @@ class Mailer < ActionMailer::Base
     headers.reverse_merge! 'X-Mailer' => 'Redmine',
             'X-Redmine-Host' => Setting.host_name,
             'X-Redmine-Site' => Setting.app_title,
-            'X-Auto-Response-Suppress' => 'OOF',
+            'X-Auto-Response-Suppress' => 'All',
             'Auto-Submitted' => 'auto-generated',
             'From' => Setting.mail_from,
             'List-Id' => "<#{Setting.mail_from.to_s.gsub('@', '.')}>"

@@ -503,7 +503,6 @@ sl:
   label_used_by: V uporabi od
   label_details: Podrobnosti
   label_add_note: Dodaj zabeležko
-  label_per_page: Na stran
   label_calendar: Koledar
   label_months_from: mesecev od
   label_gantt: Gantogram
@@ -1139,3 +1138,6 @@ sl:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

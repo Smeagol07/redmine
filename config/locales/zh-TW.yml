@@ -312,6 +312,7 @@
   field_firstname: 名字
   field_lastname: 姓氏
   field_mail: 電子郵件
+  field_address: 電子郵件地址
   field_filename: 檔案名稱
   field_filesize: 大小
   field_downloads: 下載次數
@@ -499,6 +500,7 @@
   setting_force_default_language_for_loggedin: 強迫已登入用戶使用預設語言
   setting_link_copied_issue: 複製時連結問題
   setting_max_additional_emails: 其他電子郵件地址的最大值
+  setting_search_results_per_page: 每一頁的搜尋結果數目
 
   permission_add_project: 建立專案
   permission_add_subprojects: 建立子專案
@@ -512,6 +514,7 @@
   permission_view_issues: 檢視問題
   permission_add_issues: 新增問題
   permission_edit_issues: 編輯問題
+  permission_copy_issues: 複製問題
   permission_manage_issue_relations: 管理問題關聯
   permission_set_issues_private: 設定問題為公開或私人
   permission_set_own_issues_private: 設定自己的問題為公開或私人
@@ -730,7 +733,6 @@
   label_used_by: 已使用專案
   label_details: 明細
   label_add_note: 加入一個新筆記
-  label_per_page: 每頁
   label_calendar: 日曆
   label_months_from: 個月, 開始月份
   label_gantt: 甘特圖
@@ -1021,6 +1023,7 @@
   label_email_address_add: 新增電子郵件地址
   label_enable_notifications: 啟用通知
   label_disable_notifications: 停用通知
+  label_blank_value: 空白
 
   button_login: 登入
   button_submit: 送出
@@ -1215,4 +1218,3 @@
   description_date_from: 輸入起始日期
   description_date_to: 輸入結束日期
   text_repository_identifier_info: '僅允許使用小寫英文字母 (a-z), 阿拉伯數字, 虛線與底線。<br />一旦儲存之後, 代碼便無法再次被更改。'
-  field_address: 電子郵件

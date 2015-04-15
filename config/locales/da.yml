@@ -452,7 +452,6 @@ da:
   label_used_by: Brugt af
   label_details: Detaljer
   label_add_note: Tilføj note
-  label_per_page: Pr. side
   label_calendar: Kalender
   label_months_from: måneder frem
   label_gantt: Gantt
@@ -1156,3 +1155,6 @@ da:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

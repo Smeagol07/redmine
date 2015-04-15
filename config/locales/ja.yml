@@ -367,7 +367,7 @@ ja:
   setting_emails_header: メールのヘッダ
   setting_emails_footer: メールのフッタ
   setting_protocol: プロトコル
-  setting_per_page_options: ページ毎の表示件数
+  setting_per_page_options: ページごとの表示件数
   setting_user_format: ユーザー名の表示書式
   setting_activity_days_default: プロジェクトの活動ページに表示される日数
   setting_display_subprojects_issues: サブプロジェクトのチケットをメインプロジェクトに表示する
@@ -606,7 +606,6 @@ ja:
   label_used_by: 使用中
   label_details: 詳細
   label_add_note: 注記を追加
-  label_per_page: ページ毎
   label_calendar: カレンダー
   label_months_from: ヶ月分
   label_gantt: ガントチャート
@@ -778,7 +777,7 @@ ja:
   label_registration_manual_activation: 手動でアカウントを有効化
   label_registration_automatic_activation: 自動でアカウントを有効化
   label_display_per_page: "1ページに: %{value}"
-  label_age: 年齢
+  label_age: 経過期間
   label_change_properties: プロパティの変更
   label_general: 全般
   label_more: 続き
@@ -1150,8 +1149,11 @@ ja:
   label_search_attachments_only: 添付ファイルのみ検索
   label_search_open_issues_only: 未完了のチケットのみ
   field_address: メールアドレス
-  setting_max_additional_emails: Maximum number of additional email addresses
-  label_email_address_plural: Emails
-  label_email_address_add: Add email address
-  label_enable_notifications: Enable notifications
-  label_disable_notifications: Disable notifications
+  setting_max_additional_emails: 追加メールアドレス数の上限
+  label_email_address_plural: メールアドレス
+  label_email_address_add: メールアドレスの追加
+  label_enable_notifications: 通知を有効にする
+  label_disable_notifications: 通知を無効にする
+  setting_search_results_per_page: ページごとの検索結果表示件数
+  label_blank_value: 空
+  permission_copy_issues: チケットのコピー

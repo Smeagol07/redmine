@@ -595,7 +595,6 @@ az:
   label_password_lost: Parolun bərpası
   label_permissions_report: Giriş hüquqları üzrə hesabat 
   label_permissions: Giriş hüquqları
-  label_per_page: Səhifəyə
   label_personalize_page: bu səhifəni fərdiləşdirmək
   label_planning: Planlaşdırma
   label_please_login: Xahiş edirik, daxil olun.
@@ -1236,3 +1235,6 @@ az:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

@@ -435,6 +435,7 @@ fr:
   setting_force_default_language_for_loggedin: Forcer la langue par défault pour les utilisateurs identifiés
   setting_link_copied_issue: Lier les demandes lors de la copie
   setting_max_additional_emails: Nombre maximal d'adresses email additionnelles
+  setting_search_results_per_page: Résultats de recherche affichés par page
 
   permission_add_project: Créer un projet
   permission_add_subprojects: Créer des sous-projets
@@ -448,6 +449,7 @@ fr:
   permission_view_issues: Voir les demandes
   permission_add_issues: Créer des demandes
   permission_edit_issues: Modifier les demandes
+  permission_copy_issues: Copier les demandes
   permission_manage_issue_relations: Gérer les relations
   permission_set_issues_private: Rendre les demandes publiques ou privées
   permission_set_own_issues_private: Rendre ses propres demandes publiques ou privées
@@ -666,7 +668,6 @@ fr:
   label_used_by: Utilisé par
   label_details: Détails
   label_add_note: Ajouter une note
-  label_per_page: Par page
   label_calendar: Calendrier
   label_months_from: mois depuis
   label_gantt: Gantt
@@ -957,6 +958,7 @@ fr:
   label_email_address_add: Ajouter une adresse email
   label_enable_notifications: Activer les notifications
   label_disable_notifications: Désactiver les notifications
+  label_blank_value: non renseigné
 
   button_login: Connexion
   button_submit: Soumettre

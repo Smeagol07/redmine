@@ -96,6 +96,7 @@ class Issue < ActiveRecord::Base
     ids.any? ? where(:fixed_version_id => ids) : where('1=0')
   }
 
+  before_validation :clear_disabled_fields
   before_create :default_assign
   before_save :close_duplicates, :update_done_ratio_from_issue_status,
               :force_updated_on_change, :update_closed_on, :set_assigned_to_was
@@ -153,7 +154,12 @@ class Issue < ActiveRecord::Base
 
   # Returns true if user or current user is allowed to edit or add a note to the issue
   def editable?(user=User.current)
-    user.allowed_to?(:edit_issues, project) || user.allowed_to?(:add_issue_notes, project)
+    attributes_editable?(user) || user.allowed_to?(:add_issue_notes, project)
+  end
+
+  # Returns true if user or current user is allowed to edit the issue
+  def attributes_editable?(user=User.current)
+    user.allowed_to?(:edit_issues, project)
   end
 
   def initialize(attributes=nil, *args)
@@ -287,7 +293,7 @@ class Issue < ActiveRecord::Base
   # * or if the status was not part of the new tracker statuses
   # * or the status was nil
   def tracker=(tracker)
-    if tracker != self.tracker 
+    if tracker != self.tracker
       if status == default_status
         self.status = nil
       elsif status && tracker && !tracker.issue_status_ids.include?(status.id)
@@ -375,15 +381,7 @@ class Issue < ActiveRecord::Base
   end
 
   safe_attributes 'project_id',
-    :if => lambda {|issue, user|
-      if issue.new_record?
-        issue.copy?
-      elsif user.allowed_to?(:move_issues, issue.project)
-        Issue.allowed_target_projects_on_move.count > 1
-      end
-    }
-
-  safe_attributes 'tracker_id',
+    'tracker_id',
     'status_id',
     'category_id',
     'assigned_to_id',
@@ -424,6 +422,10 @@ class Issue < ActiveRecord::Base
     names = super
     names -= disabled_core_fields
     names -= read_only_attribute_names(user)
+    if new_record?
+     	# Make sure that project_id can always be set for new issues
+      names |= %w(project_id)
+    end
     names
   end
 
@@ -445,6 +447,11 @@ class Issue < ActiveRecord::Base
 
     if (t = attrs.delete('tracker_id')) && safe_attribute?('tracker_id')
       self.tracker_id = t
+    end
+    if project
+      # Set the default tracker to accept custom field values
+      # even if tracker is not specified
+      self.tracker ||= project.trackers.first
     end
 
     if (s = attrs.delete('status_id')) && safe_attribute?('status_id')
@@ -542,13 +549,27 @@ class Issue < ActiveRecord::Base
     workflow_permissions = WorkflowPermission.where(:tracker_id => tracker_id, :old_status_id => status_id, :role_id => roles.map(&:id)).to_a
     if workflow_permissions.any?
       workflow_rules = workflow_permissions.inject({}) do |h, wp|
-        h[wp.field_name] ||= []
-        h[wp.field_name] << wp.rule
+        h[wp.field_name] ||= {}
+        h[wp.field_name][wp.role_id] = wp.rule
         h
+      end
+      fields_with_roles = {}
+      IssueCustomField.where(:visible => false).joins(:roles).pluck(:id, "role_id").each do |field_id, role_id|
+        fields_with_roles[field_id] ||= []
+        fields_with_roles[field_id] << role_id
+      end
+      roles.each do |role|
+        fields_with_roles.each do |field_id, role_ids|
+          unless role_ids.include?(role.id)
+            field_name = field_id.to_s
+            workflow_rules[field_name] ||= {}
+            workflow_rules[field_name][role.id] = 'readonly'
+          end
+        end
       end
       workflow_rules.each do |attr, rules|
         next if rules.size < roles.size
-        uniq_rules = rules.uniq
+        uniq_rules = rules.values.uniq
         if uniq_rules.size == 1
           result[attr] = uniq_rules.first
         else
@@ -639,6 +660,17 @@ class Issue < ActiveRecord::Base
     end
   end
 
+  # Overrides Redmine::Acts::Customizable::InstanceMethods#validate_custom_field_values
+  # so that custom values that are not editable are not validated (eg. a custom field that
+  # is marked as required should not trigger a validation error if the user is not allowed
+  # to edit this field).
+  def validate_custom_field_values
+    user = new_record? ? author : current_journal.try(:user)
+    if new_record? || custom_field_values_changed?
+      editable_custom_field_values(user).each(&:validate_value)
+    end
+  end
+
   # Set the done_ratio using the status if that setting is set.  This will keep the done_ratios
   # even if the user turns off the setting later
   def update_done_ratio_from_issue_status
@@ -658,7 +690,11 @@ class Issue < ActiveRecord::Base
 
   # Returns the names of attributes that are journalized when updating the issue
   def journalized_attribute_names
-    Issue.column_names - %w(id root_id lft rgt lock_version created_on updated_on closed_on)
+    names = Issue.column_names - %w(id root_id lft rgt lock_version created_on updated_on closed_on)
+    if tracker
+      names -= tracker.disabled_core_fields
+    end
+    names
   end
 
   # Returns the id of the last journal or nil
@@ -818,12 +854,12 @@ class Issue < ActiveRecord::Base
     end
   end
 
-  # Returns the previous assignee if changed
+  # Returns the previous assignee (user or group) if changed
   def assigned_to_was
     # assigned_to_id_was is reset before after_save callbacks
     user_id = @previous_assigned_to_id || assigned_to_id_was
     if user_id && user_id != assigned_to_id
-      @assigned_to_was ||= User.find_by_id(user_id)
+      @assigned_to_was ||= Principal.find_by_id(user_id)
     end
   end
 
@@ -1282,16 +1318,18 @@ class Issue < ActiveRecord::Base
 
   # Returns a scope of projects that user can assign the issue to
   def allowed_target_projects(user=User.current)
-    if new_record?
-      Project.where(Project.allowed_to_condition(user, :add_issues))
-    else
-      self.class.allowed_target_projects_on_move(user)
-    end
+    current_project = new_record? ? nil : project
+    self.class.allowed_target_projects(user, current_project)
   end
 
-  # Returns a scope of projects that user can move issues to
-  def self.allowed_target_projects_on_move(user=User.current)
-    Project.where(Project.allowed_to_condition(user, :move_issues))
+  # Returns a scope of projects that user can assign issues to
+  # If current_project is given, it will be included in the scope
+  def self.allowed_target_projects(user=User.current, current_project=nil)
+    condition = Project.allowed_to_condition(user, :add_issues)
+    if current_project
+      condition = ["(#{condition}) OR #{Project.table_name}.id = ?", current_project.id]
+    end
+    Project.where(condition)
   end
 
   private
@@ -1556,5 +1594,13 @@ class Issue < ActiveRecord::Base
   def clear_assigned_to_was
     @assigned_to_was = nil
     @previous_assigned_to_id = nil
+  end
+
+  def clear_disabled_fields
+    if tracker
+      tracker.disabled_core_fields.each do |attribute|
+        send "#{attribute}=", nil
+      end
+    end
   end
 end

@@ -32,6 +32,24 @@ module IssuesHelper
     end
   end
 
+  def grouped_issue_list(issues, query, issue_count_by_group, &block)
+    previous_group, first = false, true
+    issue_list(issues) do |issue, level|
+      group_name = group_count = nil
+      if query.grouped? && ((group = query.group_by_column.value(issue)) != previous_group || first)
+        if group.blank? && group != false
+          group_name = "(#{l(:label_blank_value)})"
+        else
+          group_name = column_content(query.group_by_column, issue)
+        end
+        group_name ||= ""
+        group_count = issue_count_by_group[group]
+      end
+      yield issue, level, group_name, group_count
+      previous_group, first = group, false
+    end
+  end
+
   # Renders a HTML/CSS tooltip
   #
   # To use, a trigger div is needed.  This is a div with the class of "tooltip"
@@ -174,11 +192,26 @@ module IssuesHelper
     ordered_values.compact.each do |value|
       css = "cf_#{value.custom_field.id}"
       s << "</tr>\n<tr>\n" if n > 0 && (n % 2) == 0
-      s << "\t<th class=\"#{css}\">#{ h(value.custom_field.name) }:</th><td class=\"#{css}\">#{ h(show_value(value)) }</td>\n"
+      s << "\t<th class=\"#{css}\">#{ custom_field_name_tag(value.custom_field) }:</th><td class=\"#{css}\">#{ h(show_value(value)) }</td>\n"
       n += 1
     end
     s << "</tr>\n"
     s.html_safe
+  end
+
+  # Returns the path for updating the issue form
+  # with project as the current project
+  def update_issue_form_path(project, issue)
+    options = {:format => 'js'}
+    if issue.new_record?
+      if project
+        new_project_issue_path(project, options)
+      else
+        new_issue_path(options)
+      end
+    else
+      edit_issue_path(issue, options)
+    end
   end
 
   # Returns the number of descendants for an array of issues
@@ -197,6 +230,16 @@ module IssuesHelper
       message << "\n" + l(:text_issues_destroy_descendants_confirmation, :count => descendant_count)
     end
     message
+  end
+
+  # Returns an array of users that are proposed as watchers
+  # on the new issue form
+  def users_for_new_issue_watchers(issue)
+    users = issue.watcher_users
+    if issue.project.users.count <= 20
+      users = (users + issue.project.users.sort).uniq
+    end
+    users
   end
 
   def sidebar_queries
@@ -277,15 +320,19 @@ module IssuesHelper
       end
       strings << show_detail(detail, no_html, options)
     end
-    values_by_field.each do |field, changes|
-      detail = JournalDetail.new(:property => 'cf', :prop_key => field.id.to_s)
-      detail.instance_variable_set "@custom_field", field
-      if changes[:added].any?
-        detail.value = changes[:added]
-        strings << show_detail(detail, no_html, options)
-      elsif changes[:deleted].any?
-        detail.old_value = changes[:deleted]
-        strings << show_detail(detail, no_html, options)
+    if values_by_field.present?
+      multiple_values_detail = Struct.new(:property, :prop_key, :custom_field, :old_value, :value)
+      values_by_field.each do |field, changes|
+        if changes[:added].any?
+          detail = multiple_values_detail.new('cf', field.id.to_s, field)
+          detail.value = changes[:added]
+          strings << show_detail(detail, no_html, options)
+        end
+        if changes[:deleted].any?
+          detail = multiple_values_detail.new('cf', field.id.to_s, field)
+          detail.old_value = changes[:deleted]
+          strings << show_detail(detail, no_html, options)
+        end
       end
     end
     strings
@@ -417,14 +464,14 @@ module IssuesHelper
     end
     @detail_value_name_by_reflection ||= Hash.new do |hash, key|
       association = Issue.reflect_on_association(key.first.to_sym)
+      name = nil
       if association
         record = association.klass.find_by_id(key.last)
         if record
-          record.name.force_encoding('UTF-8')
-          hash[key] = record.name
+          name = record.name.force_encoding('UTF-8')
         end
       end
-      hash[key] ||= nil
+      hash[key] = name
     end
     @detail_value_name_by_reflection[[field, id]]
   end

@@ -265,6 +265,14 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:issue_count_by_group)
   end
 
+  def test_index_with_query_grouped_and_sorted_by_category
+    get :index, :project_id => 1, :set_filter => 1, :group_by => "category", :sort => "category"
+    assert_response :success
+    assert_template 'index'
+    assert_not_nil assigns(:issues)
+    assert_not_nil assigns(:issue_count_by_group)
+  end
+
   def test_index_with_query_grouped_by_list_custom_field
     get :index, :project_id => 1, :query_id => 9
     assert_response :success
@@ -308,7 +316,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select 'tr.group', 3
     assert_select 'tr.group', :text => /Yes/
     assert_select 'tr.group', :text => /No/
-    assert_select 'tr.group', :text => /none/
+    assert_select 'tr.group', :text => /blank/
   end
 
   def test_index_grouped_by_boolean_custom_field_with_false_group_in_first_position_should_show_the_group
@@ -849,7 +857,7 @@ class IssuesControllerTest < ActionController::TestCase
   def test_index_with_fixed_version_column
     get :index, :set_filter => 1, :c => %w(fixed_version)
     assert_select 'table.issues td.fixed_version' do
-      assert_select 'a[href=?]', '/versions/2', :text => '1.0'
+      assert_select 'a[href=?]', '/versions/2', :text => 'eCookbook - 1.0'
     end
   end
 
@@ -1497,6 +1505,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assert_template 'new'
 
+    assert_select 'form#issue-form[action=?]', '/projects/ecookbook/issues'
     assert_select 'form#issue-form' do
       assert_select 'input[name=?]', 'issue[is_private]'
       assert_select 'select[name=?]', 'issue[project_id]', 0
@@ -1550,6 +1559,21 @@ class IssuesControllerTest < ActionController::TestCase
       assert_select 'input[name=?][value=?]', 'issue[custom_field_values][2]', 'Default string'
       assert_select 'input[name=?]', 'issue[watcher_user_ids][]', 0
     end
+  end
+
+  def test_new_without_project_id
+    @request.session[:user_id] = 2
+    get :new
+    assert_response :success
+    assert_template 'new'
+
+    assert_select 'form#issue-form[action=?]', '/issues'
+    assert_select 'form#issue-form' do
+      assert_select 'select[name=?]', 'issue[project_id]'
+    end
+
+    assert_nil assigns(:project)
+    assert_not_nil assigns(:issue)
   end
 
   def test_new_should_select_default_status
@@ -1757,13 +1781,13 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_update_form_for_new_issue
     @request.session[:user_id] = 2
-    xhr :post, :update_form, :project_id => 1,
+    xhr :post, :new, :project_id => 1,
                      :issue => {:tracker_id => 2,
                                 :subject => 'This is the test_new issue',
                                 :description => 'This is the description',
                                 :priority_id => 5}
     assert_response :success
-    assert_template 'update_form'
+    assert_template 'new'
     assert_template :partial => '_form'
     assert_equal 'text/javascript', response.content_type
 
@@ -1781,7 +1805,7 @@ class IssuesControllerTest < ActionController::TestCase
     WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 5)
     WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 5, :new_status_id => 4)
 
-    xhr :post, :update_form, :project_id => 1,
+    xhr :post, :new, :project_id => 1,
                      :issue => {:tracker_id => 1,
                                 :status_id => 5,
                                 :subject => 'This is an issue'}
@@ -1796,7 +1820,7 @@ class IssuesControllerTest < ActionController::TestCase
     tracker.update! :default_status_id => 2
     tracker.generate_transitions! 2, 1, :clear => true
 
-    xhr :post, :update_form, :project_id => 1,
+    xhr :post, :new, :project_id => 1,
                      :issue => {:tracker_id => 2,
                                 :status_id => 1},
                      :was_default_status => 1
@@ -2164,6 +2188,59 @@ class IssuesControllerTest < ActionController::TestCase
     assert issue.is_private?
   end
 
+  def test_create_without_project_id
+    @request.session[:user_id] = 2
+
+    assert_difference 'Issue.count' do
+      post :create,
+           :issue => {:project_id => 3,
+                      :tracker_id => 2,
+                      :subject => 'Foo'}
+      assert_response 302
+    end
+    issue = Issue.order('id DESC').first
+    assert_equal 3, issue.project_id
+    assert_equal 2, issue.tracker_id
+  end
+
+  def test_create_without_project_id_and_continue_should_redirect_without_project_id
+    @request.session[:user_id] = 2
+
+    assert_difference 'Issue.count' do
+      post :create,
+           :issue => {:project_id => 3,
+                      :tracker_id => 2,
+                      :subject => 'Foo'},
+           :continue => '1'
+      assert_redirected_to '/issues/new?issue%5Bproject_id%5D=3&issue%5Btracker_id%5D=2'
+    end
+  end
+
+  def test_create_without_project_id_should_be_denied_without_permission
+    Role.non_member.remove_permission! :add_issues
+    Role.anonymous.remove_permission! :add_issues
+    @request.session[:user_id] = 2
+
+    assert_no_difference 'Issue.count' do
+      post :create,
+           :issue => {:project_id => 3,
+                      :tracker_id => 2,
+                      :subject => 'Foo'}
+      assert_response 422
+    end
+  end
+
+  def test_create_without_project_id_with_failure
+    @request.session[:user_id] = 2
+
+    post :create,
+         :issue => {:project_id => 3,
+                    :tracker_id => 2,
+                    :subject => ''}
+    assert_response :success
+    assert_nil assigns(:project)
+  end
+
   def test_post_create_should_send_a_notification
     ActionMailer::Base.deliveries.clear
     @request.session[:user_id] = 2
@@ -2473,6 +2550,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select '#main-menu a.new-issue[href="/projects/ecookbook/issues/new"]'
   end
 
+  def test_new_as_copy_without_add_issues_permission_should_not_propose_current_project_as_target
+    user = setup_user_with_copy_but_not_add_permission
+
+    @request.session[:user_id] = user.id
+    get :new, :project_id => 1, :copy_from => 1
+
+    assert_response :success
+    assert_template 'new'
+    assert_select 'select[name=?]', 'issue[project_id]' do
+      assert_select 'option[value="1"]', 0
+      assert_select 'option[value="2"]', :text => 'OnlineStore'
+    end
+  end
+
   def test_new_as_copy_with_attachments_should_show_copy_attachments_checkbox
     @request.session[:user_id] = 2
     issue = Issue.find(3)
@@ -2520,6 +2611,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 2, issue.project_id
     assert_equal 3, issue.tracker_id
     assert_equal 'Copy', issue.subject
+  end
+
+  def test_create_as_copy_should_allow_status_to_be_set_to_default
+    copied = Issue.generate! :status_id => 2
+    assert_equal 2, copied.reload.status_id
+
+    @request.session[:user_id] = 2
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, :copy_from => copied.id,
+        :issue => {:project_id => '1', :tracker_id => '1', :status_id => '1'},
+        :was_default_status => '1'
+    end
+    issue = Issue.order('id DESC').first
+    assert_equal 1, issue.status_id
   end
 
   def test_create_as_copy_should_copy_attachments
@@ -2762,15 +2867,14 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_update_form_for_existing_issue
     @request.session[:user_id] = 2
-    xhr :put, :update_form, :project_id => 1,
-                             :id => 1,
+    xhr :patch, :edit, :id => 1,
                              :issue => {:tracker_id => 2,
                                         :subject => 'This is the test_new issue',
                                         :description => 'This is the description',
                                         :priority_id => 5}
     assert_response :success
     assert_equal 'text/javascript', response.content_type
-    assert_template 'update_form'
+    assert_template 'edit'
     assert_template :partial => '_form'
 
     issue = assigns(:issue)
@@ -2783,7 +2887,7 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_update_form_for_existing_issue_should_keep_issue_author
     @request.session[:user_id] = 3
-    xhr :put, :update_form, :project_id => 1, :id => 1, :issue => {:subject => 'Changed'}
+    xhr :patch, :edit, :id => 1, :issue => {:subject => 'Changed'}
     assert_response :success
     assert_equal 'text/javascript', response.content_type
 
@@ -2800,8 +2904,7 @@ class IssuesControllerTest < ActionController::TestCase
     WorkflowTransition.create!(:role_id => 1, :tracker_id => 2, :old_status_id => 2, :new_status_id => 5)
     WorkflowTransition.create!(:role_id => 1, :tracker_id => 2, :old_status_id => 5, :new_status_id => 4)
 
-    xhr :put, :update_form, :project_id => 1,
-                    :id => 2,
+    xhr :patch, :edit, :id => 2,
                     :issue => {:tracker_id => 2,
                                :status_id => 5,
                                :subject => 'This is an issue'}
@@ -2812,8 +2915,7 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_update_form_for_existing_issue_with_project_change
     @request.session[:user_id] = 2
-    xhr :put, :update_form, :project_id => 1,
-                             :id => 1,
+    xhr :patch, :edit, :id => 1,
                              :issue => {:project_id => 2,
                                         :tracker_id => 2,
                                         :subject => 'This is the test_new issue',
@@ -2835,7 +2937,7 @@ class IssuesControllerTest < ActionController::TestCase
     WorkflowTransition.delete_all
     WorkflowTransition.create!(:role_id => 1, :tracker_id => 2, :old_status_id => 2, :new_status_id => 3)
 
-    xhr :put, :update_form, :project_id => 1, :id => 2
+    xhr :patch, :edit, :id => 2
     assert_response :success
     assert_equal [2,3], assigns(:allowed_statuses).map(&:id).sort
   end
@@ -3309,7 +3411,7 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_get_bulk_edit
     @request.session[:user_id] = 2
-    get :bulk_edit, :ids => [1, 2]
+    get :bulk_edit, :ids => [1, 3]
     assert_response :success
     assert_template 'bulk_edit'
 
@@ -3360,7 +3462,7 @@ class IssuesControllerTest < ActionController::TestCase
   end
 
   def test_get_bulk_edit_with_user_custom_field
-    field = IssueCustomField.create!(:name => 'Tester', :field_format => 'user', :is_for_all => true)
+    field = IssueCustomField.create!(:name => 'Tester', :field_format => 'user', :is_for_all => true, :tracker_ids => [1,2,3])
 
     @request.session[:user_id] = 2
     get :bulk_edit, :ids => [1, 2]
@@ -3373,7 +3475,7 @@ class IssuesControllerTest < ActionController::TestCase
   end
 
   def test_get_bulk_edit_with_version_custom_field
-    field = IssueCustomField.create!(:name => 'Affected version', :field_format => 'version', :is_for_all => true)
+    field = IssueCustomField.create!(:name => 'Affected version', :field_format => 'version', :is_for_all => true, :tracker_ids => [1,2,3])
 
     @request.session[:user_id] = 2
     get :bulk_edit, :ids => [1, 2]
@@ -3390,7 +3492,7 @@ class IssuesControllerTest < ActionController::TestCase
     field.update_attribute :multiple, true
 
     @request.session[:user_id] = 2
-    get :bulk_edit, :ids => [1, 2]
+    get :bulk_edit, :ids => [1, 3]
     assert_response :success
     assert_template 'bulk_edit'
 
@@ -3454,6 +3556,17 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select 'select[name=?]', 'issue[category_id]' do
       assert_select 'option', :text => 'Recipes'
     end
+  end
+
+  def test_bulk_edit_should_only_propose_issues_trackers_custom_fields
+    IssueCustomField.delete_all
+    field = IssueCustomField.generate!(:tracker_ids => [1], :is_for_all => true)
+    IssueCustomField.generate!(:tracker_ids => [2], :is_for_all => true)
+    @request.session[:user_id] = 2
+
+    issue_ids = Issue.where(:project_id => 1, :tracker_id => 1).limit(2).ids
+    get :bulk_edit, :ids => issue_ids
+    assert_equal [field], assigns(:custom_fields)
   end
 
   def test_bulk_update
@@ -3770,9 +3883,26 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issues
     assert_equal [1, 2, 3], issues.map(&:id).sort
 
+    assert_select 'select[name=?]', 'issue[project_id]' do
+      assert_select 'option[value=""]'
+    end
     assert_select 'input[name=copy_attachments]'
   end
 
+  def test_get_bulk_copy_without_add_issues_permission_should_not_propose_current_project_as_target
+    user = setup_user_with_copy_but_not_add_permission
+    @request.session[:user_id] = user.id
+
+    get :bulk_edit, :ids => [1, 2, 3], :copy => '1'
+    assert_response :success
+    assert_template 'bulk_edit'
+
+    assert_select 'select[name=?]', 'issue[project_id]' do
+      assert_select 'option[value=""]', 0
+      assert_select 'option[value="2"]'
+    end
+  end
+  
   def test_bulk_copy_to_another_project
     @request.session[:user_id] = 2
     assert_difference 'Issue.count', 2 do
@@ -3786,6 +3916,32 @@ class IssuesControllerTest < ActionController::TestCase
     copies.each do |copy|
       assert_equal 2, copy.project_id
     end
+  end
+
+  def test_bulk_copy_without_add_issues_permission_should_be_allowed_on_project_with_permission
+    user = setup_user_with_copy_but_not_add_permission
+    @request.session[:user_id] = user.id
+
+    assert_difference 'Issue.count', 3 do
+      post :bulk_update, :ids => [1, 2, 3], :issue => {:project_id => '2'}, :copy => '1'
+      assert_response 302
+    end
+  end
+
+  def test_bulk_copy_on_same_project_without_add_issues_permission_should_be_denied
+    user = setup_user_with_copy_but_not_add_permission
+    @request.session[:user_id] = user.id
+
+    post :bulk_update, :ids => [1, 2, 3], :issue => {:project_id => ''}, :copy => '1'
+    assert_response 403
+  end
+
+  def test_bulk_copy_on_different_project_without_add_issues_permission_should_be_denied
+    user = setup_user_with_copy_but_not_add_permission
+    @request.session[:user_id] = user.id
+
+    post :bulk_update, :ids => [1, 2, 3], :issue => {:project_id => '1'}, :copy => '1'
+    assert_response 403
   end
 
   def test_bulk_copy_should_allow_not_changing_the_issue_attributes
@@ -4078,5 +4234,14 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select 'div#quick-search form' do
       assert_select 'input[name=issues][value="1"][type=hidden]'
     end
+  end
+
+  def setup_user_with_copy_but_not_add_permission
+    Role.all.each {|r| r.remove_permission! :add_issues}
+    Role.find_by_name('Manager').add_permission! :add_issues
+    user = User.generate!
+    User.add_to_project(user, Project.find(1), Role.find_by_name('Developer'))
+    User.add_to_project(user, Project.find(2), Role.find_by_name('Manager'))
+    user
   end
 end

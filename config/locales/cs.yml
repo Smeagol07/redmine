@@ -578,7 +578,6 @@ cs:
   label_used_by: Použito
   label_details: Detaily
   label_add_note: Přidat poznámku
-  label_per_page: Na stránku
   label_calendar: Kalendář
   label_months_from: měsíců od
   label_gantt: Ganttův diagram
@@ -1141,3 +1140,6 @@ cs:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

@@ -524,7 +524,6 @@ gl:
   label_overall_activity: Actividade global
   label_overview: Vistazo
   label_password_lost: "Esqueceu o contrasinal?"
-  label_per_page: Por páxina
   label_permissions: Permisos
   label_permissions_report: Informe de permisos
   label_personalize_page: Personalizar esta páxina
@@ -1147,3 +1146,6 @@ gl:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

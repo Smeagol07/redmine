@@ -560,7 +560,6 @@ sr:
   label_used_by: Користио
   label_details: Детаљи
   label_add_note: Додај белешку
-  label_per_page: По страни
   label_calendar: Календар
   label_months_from: месеци од
   label_gantt: Гантов дијаграм
@@ -1140,3 +1139,6 @@ sr:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

@@ -572,7 +572,6 @@ fa:
   label_used_by: به کار رفته در
   label_details: جزئیات
   label_add_note: افزودن یادداشت
-  label_per_page: ردیف‌ها در هر صفحه
   label_calendar: تقویم
   label_months_from: از ماه
   label_gantt: گانت
@@ -1140,3 +1139,6 @@ fa:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

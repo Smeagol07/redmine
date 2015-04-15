@@ -548,7 +548,6 @@ es:
   label_overall_activity: Actividad global
   label_overview: Vistazo
   label_password_lost: ¿Olvidaste la contraseña?
-  label_per_page: Por página
   label_permissions: Permisos
   label_permissions_report: Informe de permisos
   label_personalize_page: Personalizar esta página
@@ -662,7 +661,7 @@ es:
   mail_body_account_information_external: "Puede usar su cuenta %{value} para conectarse."
   mail_body_lost_password: 'Para cambiar su contraseña, haga clic en el siguiente enlace:'
   mail_body_register: 'Para activar su cuenta, haga clic en el siguiente enlace:'
-  mail_body_reminder: "%{count} peticion(es) asignadas a tí finalizan en los próximos %{days} días:"
+  mail_body_reminder: "%{count} peticion(es) asignadas a ti finalizan en los próximos %{days} días:"
   mail_subject_account_activation_request: "Petición de activación de cuenta %{value}"
   mail_subject_lost_password: "Tu contraseña del %{value}"
   mail_subject_register: "Activación de la cuenta del %{value}"
@@ -1172,3 +1171,6 @@ es:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

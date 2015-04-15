@@ -240,7 +240,7 @@ module ApplicationHelper
   end
 
   def format_version_name(version)
-    if !version.shared? || version.project == @project
+    if version.project == @project
       h(version)
     else
       h("#{version.project} - #{version}")
@@ -327,7 +327,7 @@ module ApplicationHelper
   # Renders the project quick-jump box
   def render_project_jump_box
     return unless User.current.logged?
-    projects = User.current.memberships.collect(&:project).compact.select(&:active?).uniq
+    projects = User.current.projects.active.select(:id, :name, :identifier, :lft, :rgt).to_a
     if projects.any?
       options =
         ("<option value=''>#{ l(:label_jump_to_a_project) }</option>" +
@@ -343,8 +343,11 @@ module ApplicationHelper
 
   def project_tree_options_for_select(projects, options = {})
     s = ''.html_safe
-    if options[:include_blank]
-      s << content_tag('option', '&nbsp;'.html_safe, :value => '')
+    if blank_text = options[:include_blank]
+      if blank_text == true
+        blank_text = '&nbsp;'.html_safe
+      end
+      s << content_tag('option', blank_text, :value => '')
     end
     project_tree(projects) do |project, level|
       name_prefix = (level > 0 ? '&nbsp;' * 2 * level + '&#187; ' : '').html_safe
@@ -631,7 +634,7 @@ module ApplicationHelper
       text.gsub!(/src="([^\/"]+\.(bmp|gif|jpg|jpe|jpeg|png))"(\s+alt="([^"]*)")?/i) do |m|
         filename, ext, alt, alttext = $1.downcase, $2, $3, $4
         # search for the picture in attachments
-        if found = Attachment.latest_attach(attachments, filename)
+        if found = Attachment.latest_attach(attachments, CGI.unescape(filename))
           image_url = download_named_attachment_url(found, found.filename, :only_path => only_path)
           desc = found.description.to_s.gsub('"', '')
           if !desc.blank? && alttext.blank?
@@ -1114,7 +1117,7 @@ module ApplicationHelper
 
   def checked_image(checked=true)
     if checked
-      image_tag 'toggle_check.png'
+      @checked_image_tag ||= image_tag('toggle_check.png')
     end
   end
 

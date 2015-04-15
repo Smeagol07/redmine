@@ -543,7 +543,6 @@ lv:
   label_used_by: Izmanto
   label_details: Detaļas
   label_add_note: Pievienot piezīmi
-  label_per_page: katrā lapā
   label_calendar: Kalendārs
   label_months_from: mēneši no
   label_gantt: Ganta diagramma
@@ -1133,3 +1132,6 @@ lv:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

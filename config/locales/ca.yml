@@ -565,7 +565,6 @@ ca:
   label_used_by: Utilitzat per
   label_details: Detalls
   label_add_note: Afegeix una nota
-  label_per_page: Per pàgina
   label_calendar: Calendari
   label_months_from: mesos des de
   label_gantt: Gantt
@@ -1141,3 +1140,6 @@ ca:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

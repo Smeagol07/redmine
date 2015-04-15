@@ -531,7 +531,6 @@ id:
   label_used_by: Digunakan oleh
   label_details: Rincian
   label_add_note: Tambahkan catatan
-  label_per_page: Per halaman
   label_calendar: Kalender
   label_months_from: dari bulan
   label_gantt: Gantt
@@ -1143,3 +1142,6 @@ id:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

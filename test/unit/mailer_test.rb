@@ -119,6 +119,24 @@ class MailerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_generated_links_with_port_and_prefix
+    with_settings :host_name => '10.0.0.1:81/redmine', :protocol => 'http' do
+      Mailer.test_email(User.find(1)).deliver
+      mail = last_email
+      assert_not_nil mail
+      assert_include 'http://10.0.0.1:81/redmine', mail_body(mail)
+    end
+  end
+
+  def test_generated_links_with_port
+    with_settings :host_name => '10.0.0.1:81', :protocol => 'http' do
+      Mailer.test_email(User.find(1)).deliver
+      mail = last_email
+      assert_not_nil mail
+      assert_include 'http://10.0.0.1:81', mail_body(mail)
+    end
+  end
+
   def test_issue_edit_should_generate_url_with_hostname_for_relations
     journal = Journal.new(:journalized => Issue.find(1), :user => User.find(1), :created_on => Time.now)
     journal.details << JournalDetail.new(:property => 'relation', :prop_key => 'label_relates_to', :value => 2)
@@ -179,7 +197,7 @@ class MailerTest < ActiveSupport::TestCase
     Mailer.deliver_issue_add(issue)
     mail = last_email
     assert_not_nil mail
-    assert_equal 'OOF', mail.header['X-Auto-Response-Suppress'].to_s
+    assert_equal 'All', mail.header['X-Auto-Response-Suppress'].to_s
     assert_equal 'auto-generated', mail.header['Auto-Submitted'].to_s
     assert_equal '<redmine.example.net>', mail.header['List-Id'].to_s
   end
@@ -630,6 +648,21 @@ class MailerTest < ActiveSupport::TestCase
       ActionMailer::Base.deliveries.each do |mail|
         assert_mail_body_match 'Assigned to group', mail
       end
+    end
+  end
+
+  def test_reminders_with_version_option
+    with_settings :default_language => 'en' do 
+      version = Version.generate!(:name => 'Acme', :project_id => 1)
+      Issue.generate!(:assigned_to => User.find(2), :due_date => 5.days.from_now)
+      Issue.generate!(:assigned_to => User.find(3), :due_date => 5.days.from_now, :fixed_version => version)
+      ActionMailer::Base.deliveries.clear
+
+      Mailer.reminders(:days => 42, :version => 'acme')
+      assert_equal 1, ActionMailer::Base.deliveries.size
+
+      mail = last_email
+      assert mail.bcc.include?('dlopper@somenet.foo')
     end
   end
 

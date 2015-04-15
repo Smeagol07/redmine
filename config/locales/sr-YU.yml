@@ -562,7 +562,6 @@ sr-YU:
   label_used_by: Koristio
   label_details: Detalji
   label_add_note: Dodaj belešku
-  label_per_page: Po strani
   label_calendar: Kalendar
   label_months_from: meseci od
   label_gantt: Gantov dijagram
@@ -1141,3 +1140,6 @@ sr-YU:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues

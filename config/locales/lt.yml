@@ -655,7 +655,6 @@ lt:
   label_used_by: Naudotas
   label_details: Detalės
   label_add_note: Pridėkite pastabą
-  label_per_page: Puslapyje
   label_calendar: Kalendorius
   label_months_from: mėnesiai nuo
   label_gantt: Gantt
@@ -1198,3 +1197,6 @@ lt:
   label_email_address_add: Add email address
   label_enable_notifications: Enable notifications
   label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues
